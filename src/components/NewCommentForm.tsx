@@ -20,6 +20,7 @@ export const NewCommentForm: React.FC<Props> = ({
   const [hasErrorEmail, setHasErrorEmail] = useState(false);
   const [hasErrorBody, setHasErrorBody] = useState(false);
   const [addLoading, setAddLoading] = useState(false);
+  const [commentError, setCommentError] = useState(''); // Estado para mensagem de erro
 
   const handleInputName = (event: React.ChangeEvent<HTMLInputElement>) => {
     setName(event.target.value);
@@ -44,23 +45,26 @@ export const NewCommentForm: React.FC<Props> = ({
     }
 
     if (!name.trim() || !email.trim() || !body.trim()) {
-      if (!name.trim()) {
-        setHasErrorName(true);
-      }
+      setHasErrorName(!name.trim());
+      setHasErrorEmail(!email.trim());
+      setHasErrorBody(!body.trim());
 
-      if (!email.trim()) {
-        setHasErrorEmail(true);
-      }
+      return;
+    }
 
-      if (!body.trim()) {
-        setHasErrorBody(true);
-      }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(email)) {
+      setHasErrorEmail(true);
+      // eslint-disable-next-line no-console
+      console.error('Por favor, insira um endereço de email válido.');
 
       return;
     }
 
     if (!hasErrorName && !hasErrorEmail && !hasErrorBody) {
       setAddLoading(true);
+      setCommentError(''); // Limpa a mensagem de erro antes de tentar novamente
 
       const newComment = {
         id: 0,
@@ -70,11 +74,18 @@ export const NewCommentForm: React.FC<Props> = ({
         postId: postSelected?.id ?? 0,
       };
 
-      postComment(newComment).then(comment => {
-        setComments(prevComments => [...prevComments, comment as Comment]);
-        setAddLoading(false);
-        setBody('');
-      });
+      postComment(newComment)
+        .then(comment => {
+          setComments(prevComments => [...prevComments, comment as Comment]);
+          setAddLoading(false);
+          setBody('');
+        })
+        .catch(error => {
+          setAddLoading(false);
+          // eslint-disable-next-line no-console
+          console.error('Erro ao enviar o comentário:', error);
+          setCommentError('Não foi possível adicionar o comentário.');
+        });
     }
   };
 
@@ -85,15 +96,16 @@ export const NewCommentForm: React.FC<Props> = ({
     setHasErrorName(false);
     setHasErrorEmail(false);
     setHasErrorBody(false);
+    setCommentError(''); // Limpa a mensagem de erro ao limpar o formulário
   };
 
   return (
     <form data-cy="NewCommentForm" onSubmit={handleSubmit}>
+      {/* Campos do formulário */}
       <div className="field" data-cy="NameField">
         <label className="label" htmlFor="comment-author-name">
           Author Name
         </label>
-
         <div className="control has-icons-left has-icons-right">
           <input
             type="text"
@@ -104,11 +116,9 @@ export const NewCommentForm: React.FC<Props> = ({
             value={name}
             onChange={handleInputName}
           />
-
           <span className="icon is-small is-left">
             <i className="fas fa-user" />
           </span>
-
           {hasErrorName && (
             <span
               className="icon is-small is-right has-text-danger"
@@ -118,7 +128,6 @@ export const NewCommentForm: React.FC<Props> = ({
             </span>
           )}
         </div>
-
         {hasErrorName && (
           <p className="help is-danger" data-cy="ErrorMessage">
             Name is required
@@ -130,7 +139,6 @@ export const NewCommentForm: React.FC<Props> = ({
         <label className="label" htmlFor="comment-author-email">
           Author Email
         </label>
-
         <div className="control has-icons-left has-icons-right">
           <input
             type="text"
@@ -141,11 +149,9 @@ export const NewCommentForm: React.FC<Props> = ({
             value={email}
             onChange={handleInputEmail}
           />
-
           <span className="icon is-small is-left">
             <i className="fas fa-envelope" />
           </span>
-
           {hasErrorEmail && (
             <span
               className="icon is-small is-right has-text-danger"
@@ -155,7 +161,6 @@ export const NewCommentForm: React.FC<Props> = ({
             </span>
           )}
         </div>
-
         {hasErrorEmail && (
           <p className="help is-danger" data-cy="ErrorMessage">
             Email is required
@@ -167,7 +172,6 @@ export const NewCommentForm: React.FC<Props> = ({
         <label className="label" htmlFor="comment-body">
           Comment Text
         </label>
-
         <div className="control">
           <textarea
             id="comment-body"
@@ -178,13 +182,17 @@ export const NewCommentForm: React.FC<Props> = ({
             onChange={handleInputBody}
           />
         </div>
-
         {hasErrorBody && (
           <p className="help is-danger" data-cy="ErrorMessage">
             Enter some text
           </p>
         )}
       </div>
+
+      {/* Mensagem de erro ao enviar o comentário */}
+      {commentError && (
+        <div className="notification is-danger">{commentError}</div>
+      )}
 
       <div className="field is-grouped">
         <div className="control">
@@ -199,7 +207,6 @@ export const NewCommentForm: React.FC<Props> = ({
         </div>
 
         <div className="control">
-          {/* eslint-disable-next-line react/button-has-type */}
           <button
             type="reset"
             className="button is-link is-light"

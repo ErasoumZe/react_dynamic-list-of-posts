@@ -49,6 +49,9 @@ export const PostsList: React.FC<Props> = ({
                       );
                       setIsFormVisible(false);
                     }}
+                    aria-label={
+                      postSelected?.id === post.id ? 'Close post' : 'Open post'
+                    }
                   >
                     {postSelected?.id === post.id ? 'Close' : 'Open'}
                   </button>

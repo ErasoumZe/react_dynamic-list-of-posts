@@ -29,10 +29,17 @@ export const App = () => {
   }, []);
 
   useEffect(() => {
+    if (!userSelected?.id) {
+      setPosts([]);
+      setMainLoading(false);
+
+      return;
+    }
+
     setMainLoading(true);
-    getPostsByUser(userSelected?.id ?? null)
+    getPostsByUser(userSelected.id)
       .then(setPosts)
-      .catch(() => setPostsError('Something went wrong!'))
+      .catch(() => setPostsError('Failed to load the user posts.'))
       .finally(() => setMainLoading(false));
   }, [userSelected]);
 

@@ -32,8 +32,18 @@ export const PostDetails: React.FC<Props> = ({
   }, [postSelected, setComments]);
 
   const deleteComment = (commentId: number) => {
+    // Save the comment that will be removed to restore it in case of failure
+    const commentToDelete = comments.find(comment => comment.id === commentId);
+
+    // Optimistically remove the comment from the list
     setComments(comments.filter(comment => comment.id !== commentId));
+
     removeComment(commentId).catch(() => {
+      // If deletion fails, restore the comment
+      if (commentToDelete) {
+        setComments(prevComments => [...prevComments, commentToDelete]);
+      }
+
       setCommentsError('Unable to delete comment');
     });
   };
